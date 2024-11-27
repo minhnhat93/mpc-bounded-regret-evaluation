@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
+
+
 def plot_results(results):
     """Plot simulation results"""
     fig, axs = plt.subplots(3, 1, figsize=(10, 12))
