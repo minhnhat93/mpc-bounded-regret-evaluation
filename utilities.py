@@ -26,7 +26,7 @@ def plot_results(results):
     axs[1].grid(True)
 
     # Plot costs
-    axs[2].plot(time_steps, results.costs)
+    axs[2].plot(time_steps, results.step_costs[:len(time_steps)])
     axs[2].set_title('Objective Values')
     axs[2].grid(True)
 
