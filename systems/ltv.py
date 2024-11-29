@@ -13,6 +13,7 @@ class LTVParameter:
     B: np.ndarray
     w: np.ndarray
     Q_terminal: np.ndarray
+    x_bar_terminal: np.ndarray
 
 
 @dataclass
@@ -44,6 +45,7 @@ class LTVPrediction:
         return _w
 
     Q_terminal = Q
+    x_bar_terminal = x_bar
 
 
 class NoisyDisturbanceLTVPrediction(LTVPrediction):
@@ -53,7 +55,7 @@ class NoisyDisturbanceLTVPrediction(LTVPrediction):
 
     def w(self, _w):
         _w = np.copy(_w)
-        _w += self.scale * self.rng.normal(np.zeros_like(_w))
+        _w += self.noise_scale * self.rng.uniform(-1, 1, _w.shape)
         return _w
 
 
@@ -64,51 +66,52 @@ class NoisyLTVPrediction(LTVPrediction):
 
     def Q(self, _Q):
         _Q = np.copy(_Q)
-        _Q[[0, 1],[0, 1]] += self.scale * self.rng.normal((2,))
+        _Q[[0, 1],[0, 1]] += self.noise_scale * self.rng.uniform(-1, 1, (2,))
         return _Q
 
     def R(self, _R):
         _R = np.copy(_R)
-        _R[[0, 1],[0, 1]] += self.scale * self.rng.normal((2,))
+        _R[[0, 1],[0, 1]] += self.noise_scale * self.rng.uniform(-1, 1, (2,))
         return _R
 
     def x_bar(self, _x_bar):
         _x_bar = np.copy(_x_bar)
-        _x_bar += self.scale * self.rng.normal(np.zeros_like(_x_bar))
+        _x_bar += self.noise_scale * self.rng.uniform(-1, 1, _x_bar.shape)
         return _x_bar
 
     def A(self, _A):
         _A = np.copy(_A)
-        _A += self.scale * self.rng.normal(np.zeros_like(_A))
+        _A += self.noise_scale * self.rng.uniform(-1, 1, _A.shape)
         return _A
 
     def B(self, _B):
         _B = np.copy(_B)
-        _B[[0, 1],[0, 1]] += self.scale * self.rng.normal((2,))
+        _B[[0, 1],[0, 1]] += self.noise_scale * self.rng.uniform(-1, 1, (2,))
         return _B
 
     def w(self, _w):
         _w = np.copy(_w)
-        _w += self.scale * self.rng.normal(np.zeros_like(_w))
+        _w += self.noise_scale * self.rng.uniform(-1, 1, _w.shape)
         return _w
 
     Q_terminal = Q
+    x_bar_terminal = x_bar
 
 
 class LTVSystem:
     """Linear Time-Varying System Class"""
 
-    def __init__(self, dt, num_steps, reference_traj_func=None, noise_scale=0.1, rng_seed=101):
+    def __init__(self, dt, episode_length, reference_traj_func=None, disturbance_strength=0.1, rng_seed=101):
         if reference_traj_func:
             self.reference_traj_func = reference_traj_func
         else:
             self.reference_traj_func = lambda t: np.asarray([np.sin(t), np.cos(t)])
-        self.noise_scale = noise_scale
+        self.disturbance_strength = disturbance_strength
         self.rng = np.random.default_rng(rng_seed)
-        self.num_steps = num_steps
+        self.episode_length = episode_length
         self.dt = dt
-        self.t = np.arange(num_steps) * dt
-        self.x_bar = np.array([self.reference_traj_func(t) for t in self.t])
+        self.t = np.arange(episode_length) * dt
+        self.x_bar = np.array([self.reference_traj_func(t) for t in np.arange(episode_length + 1) * dt])
         self.A = np.array([
             [[np.cos(t), np.sin(t)],
              [-np.sin(t), np.cos(t)]]
@@ -117,7 +120,7 @@ class LTVSystem:
             [[1, 0],
              [0, np.exp(-t)]
         ] for t in self.t])
-        self.w = self.rng.normal(loc=0.0, scale=self.noise_scale, size=(num_steps, self.state_dim(),))
+        self.w = self.rng.normal(loc=0.0, scale=self.disturbance_strength, size=(episode_length, self.state_dim(),))
 
     def get_program_parameters(self, time_step):
         """Return A(t), B(t) matrices for the LTV system"""
@@ -129,7 +132,8 @@ class LTVSystem:
         B = self.B[time_step]
         w = self.w[time_step]
         Q_terminal = np.copy(Q)
-        return LTVParameter(Q=Q, R=R, x_bar=x_bar, A=A, B=B, w=w, Q_terminal=Q_terminal)
+        x_bar_terminal = self.x_bar[time_step + 1]
+        return LTVParameter(Q=Q, R=R, x_bar=x_bar, A=A, B=B, w=w, Q_terminal=Q_terminal, x_bar_terminal=x_bar_terminal)
 
     def state_dim(self):
         return 2
@@ -142,10 +146,9 @@ class LTVSystem:
         x_next = x + dxdt * dt
         return x_next
 
-    def get_mpc_optimization(self, x_start, step):
-        traj_length = self.num_steps - step - 1
-        states = cp.Variable((traj_length + 1, self.state_dim()))
-        inputs = cp.Variable((traj_length, self.input_dim()))
+    def get_mpc_optimization(self, x_start, start_step, num_steps):
+        states = cp.Variable((num_steps + 1, self.state_dim()))
+        inputs = cp.Variable((num_steps, self.input_dim()))
 
         # Initialize
         step_costs = []
@@ -156,8 +159,9 @@ class LTVSystem:
         constraints.append(states[0] == x_start)
 
         # Dynamics constraints over prediction horizon
-        for t in range(traj_length):
-            parameters_t = self.get_program_parameters(t)
+        for t in range(num_steps):
+            tt = start_step + t
+            parameters_t = self.get_program_parameters(tt)
             parameters.append(parameters_t)
 
             # State cost + Input cost
@@ -170,7 +174,7 @@ class LTVSystem:
             )
 
         # Terminal cost
-        terminal_cost = cp.quad_form(states[-1], parameters_t.Q_terminal)
+        terminal_cost = cp.quad_form(states[-1] - parameters_t.x_bar_terminal, parameters_t.Q_terminal)
         step_costs.append(terminal_cost)
 
         total_cost = sum(step_costs)
@@ -184,17 +188,20 @@ class LTVSystem:
         return opt, OptData(parameters=parameters, states=states, inputs=inputs, step_costs=step_costs)
 
 class LTVSystemWithParameterNoise(LTVSystem):
-    def __init__(self, reference_parameters: list[LTVParameter], noise_func: LTVPrediction, **kwargs):
+    def __init__(self, reference_parameters: list[LTVParameter], add_noise_funcs: LTVPrediction, **kwargs):
         super().__init__(**kwargs)
-        self.noise_func = noise_func
+        self.add_noise_funcs = add_noise_funcs
         self.reference_parameters = reference_parameters
 
     def get_program_parameters(self, time_step):
         parameters = self.reference_parameters[time_step]
-        parameters.Q = self.noise_func.Q(parameters.Q)
-        parameters.R = self.noise_func.R(parameters.R)
-        parameters.x_bar = self.noise_func.x_bar(parameters.x_bar)
-        parameters.A = self.noise_func.A(parameters.A)
-        parameters.B = self.noise_func.B(parameters.B)
-        parameters.w = self.noise_func.w(parameters.w)
-        parameters.Q_terminal = self.noise_func.Q_terminal(parameters.Q_terminal)
+        parameters.Q = self.add_noise_funcs.Q(parameters.Q)
+        parameters.R = self.add_noise_funcs.R(parameters.R)
+        parameters.x_bar = self.add_noise_funcs.x_bar(parameters.x_bar)
+        parameters.A = self.add_noise_funcs.A(parameters.A)
+        parameters.B = self.add_noise_funcs.B(parameters.B)
+        parameters.w = self.add_noise_funcs.w(parameters.w)
+        parameters.Q_terminal = self.add_noise_funcs.Q_terminal(parameters.Q_terminal)
+        parameters.x_bar_terminal = self.add_noise_funcs.x_bar_terminal(parameters.x_bar_terminal)
+
+        return parameters
