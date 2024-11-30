@@ -1,3 +1,5 @@
+from utilities import plot_results
+from systems.ltv import LTVSystem
 import numpy as np
 from mpc import MPCResult
 import pickle
@@ -5,6 +7,27 @@ from systems.ltv import LTVSystemWithParameterNoise, NoisyLTVPrediction, NoisyDi
 import timeit
 import os
 
+
+def run_offline_mpc(system, initial_state: np.ndarray, episode_length) -> MPCResult:
+    """Run MPC simulation and return results"""
+    # Solve MPC problem
+    opt, opt_data = system.get_mpc_optimization(initial_state, 0, episode_length)
+    objectives = np.cumsum(opt_data.step_costs[::-1])[::-1]
+    return MPCResult(opt_data.states, opt_data.inputs, opt_data.step_costs, objectives, opt_data)
+
+
+def collect_ltv_trajectories():
+    os.makedirs("./data/offline/ltv", exist_ok=True)
+    initial_state = np.array([0.0, 0.0])
+    episode_length = 100
+    disturbance_strength = 0.2
+    dt = 0.1
+
+    for seed in np.arange(100, 105):
+        system = LTVSystem(dt=dt, episode_length=episode_length, disturbance_strength=disturbance_strength)
+        results = run_offline_mpc(system, initial_state, episode_length)
+        plot_results(results)
+        pickle.dump(results, open(f"./data/offline/ltv/seed-{seed}", "wb"))
 
 def run_online_mpc(system, initial_state: np.ndarray, episode_length: int, prediction_horizon: int) -> MPCResult:
     """Run MPC simulation and return results"""
@@ -60,7 +83,7 @@ def run_online_ltv(noise_type: str, prediction_noise: float, prediction_horizon:
         pickle.dump(results, open(f"./data/online/ltv/{noise_type},noise-{prediction_noise},horizon-{prediction_horizon},seed-{seed}", "wb"))
 
 
-if __name__ == "__main__":
+def run_full_grid_online_mpc_ltv():
     os.makedirs("./data/online/ltv", exist_ok=True)
     NOISE_TYPES = ["disturbance", "full"]
     PREDICTION_NOISES = [0.0, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0]
@@ -83,3 +106,9 @@ if __name__ == "__main__":
                 run_online_ltv(noise_type, prediction_noise, prediction_horizon, SEEDS, offline_run)
                 stop = timeit.default_timer()
                 print(f"Time taken: {stop-start:.2f} secs")
+
+
+# Example usage
+if __name__ == "__main__":
+    collect_ltv_trajectories()
+    run_full_grid_online_mpc_ltv()
