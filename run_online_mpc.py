@@ -3,6 +3,7 @@ from mpc import MPCResult
 import pickle
 from systems.ltv import LTVSystemWithParameterNoise, NoisyLTVPrediction, NoisyDisturbanceLTVPrediction
 import timeit
+import os
 
 
 def run_online_mpc(system, initial_state: np.ndarray, episode_length: int, prediction_horizon: int) -> MPCResult:
@@ -60,12 +61,13 @@ def run_online_ltv(noise_type: str, prediction_noise: float, prediction_horizon:
 
 
 if __name__ == "__main__":
-    # NOISE_TYPES = ["disturbance", "full"]
-    # PREDICTION_NOISES = [0.0, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0]
-    # PREDICTION_HORIZON = list(range(10, 101, 10))
-    NOISE_TYPES = ["full"]
-    PREDICTION_NOISES = [0.5, 1.0]
+    os.makedirs("./data/online/ltv", exist_ok=True)
+    NOISE_TYPES = ["disturbance", "full"]
+    PREDICTION_NOISES = [0.0, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0]
     PREDICTION_HORIZON = list(range(10, 101, 10))
+    # NOISE_TYPES = ["full"]
+    # PREDICTION_NOISES = [0.5, 1.0]
+    # PREDICTION_HORIZON = list(range(10, 101, 10))
     # NOISE_TYPES = ["disturbance", "full"]
     # PREDICTION_NOISES = [0.02, 0.05]
     # PREDICTION_HORIZON = list(range(10, 101, 10))
