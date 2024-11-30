@@ -1,9 +1,9 @@
 from utilities import plot_results
-from systems.ltv import LTVSystem
+from ltv_system import LTVSystem
 import numpy as np
 from mpc import MPCResult
 import pickle
-from systems.ltv import LTVSystemWithParameterNoise, NoisyLTVPrediction, NoisyDisturbanceLTVPrediction
+from ltv_system import LTVSystemWithParameterNoise, NoisyLTVPrediction, NoisyDisturbanceLTVPrediction
 import timeit
 import os
 
