@@ -1,0 +1,1 @@
+conda create -n mpc python==3.12 matplotlib cvxpy pytorch torchvision torchaudio conda-forge::cvxpy pytorch-cuda=11.8 -c pytorch -c nvidia -y

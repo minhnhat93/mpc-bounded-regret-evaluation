@@ -1,5 +1,7 @@
 import numpy as np
 import cvxpy as cp
+import torch
+from torch import nn
 
 from dataclasses import dataclass
 import copy
@@ -27,6 +29,10 @@ class OptData:
 
 @dataclass
 class LTVPrediction:
+
+    def step(self, *args, **kwargs):
+        pass
+
     def Q(self, _Q):
         return _Q
 
@@ -113,28 +119,25 @@ class LTVSystem:
         self.rng = np.random.default_rng(rng_seed)
         self.episode_length = episode_length
         self.dt = dt
-        self.t = np.arange(episode_length) * dt
-        self.x_bar = np.array([self.reference_traj_func(t) for t in np.arange(episode_length + 1) * dt])
-        self.A = np.array([
-            [[np.cos(t), np.sin(t)],
-             [-np.sin(t), np.cos(t)]]
-        for t in self.t])
-        self.B = np.array([
-            [[1, 0],
-             [0, np.exp(-t)]]
-        for t in self.t])
+        self.t = np.arange(episode_length + 1) * dt  # +1 to cover terminal cost and terminal state
+        self.x_bar = np.array([self.reference_traj_func(t) for t in self.t])
+
+        self.Q = np.array([[[1 + np.exp(-t), 0],[0, 1 + 0.05 * t]] for t in self.t])
+        self.R = np.array([[[1, 0], [0, np.exp(-t)]] for t in self.t])
+        self.A = np.array([[[np.cos(t), np.sin(t)],[-np.sin(t), np.cos(t)]] for t in self.t])
+        self.B = np.array([[[1, 0], [0, np.exp(-t)]] for t in self.t])
         self.w = self.rng.normal(loc=0.0, scale=self.disturbance_strength, size=(episode_length, self.state_dim(),))
 
     def get_program_parameters(self, time_step):
         """Return A(t), B(t) matrices for the LTV system"""
         # Example: Simple time-varying matrices
-        Q = np.eye(2)
-        R = np.eye(2)
+        Q = self.Q[time_step]
+        R = self.R[time_step]
         x_bar = self.x_bar[time_step]
         A = self.A[time_step]
         B = self.B[time_step]
         w = self.w[time_step]
-        Q_terminal = np.copy(Q)
+        Q_terminal = self.Q[time_step + 1]
         x_bar_terminal = self.x_bar[time_step + 1]
         return LTVParameter(Q=Q, R=R, x_bar=x_bar, A=A, B=B, w=w, Q_terminal=Q_terminal, x_bar_terminal=x_bar_terminal)
 
@@ -208,3 +211,16 @@ class LTVSystemWithParameterNoise(LTVSystem):
         parameters.x_bar_terminal = self.noisy_prediction_funcs.x_bar_terminal(parameters.x_bar_terminal)
 
         return parameters
+
+
+class LTVSystemWithNeuralNetPrediction(LTVSystem):
+    def __init__(self, hidden=64, **kwargs):
+        super().__init__(**kwargs)
+        self.dense = nn.Sequential(
+            nn.Linear(1, hidden),
+            nn.ReLU(),
+            nn.Linear(hidden, hidden),
+            nn.ReLU(),
+        )
+        self.Q = nn.Linear(hidden, 2)
+        self.R = nn.Linear(hidden, 2)

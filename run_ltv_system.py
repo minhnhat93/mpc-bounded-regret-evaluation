@@ -24,8 +24,10 @@ def collect_ltv_trajectories():
     dt = 0.1
 
     for seed in np.arange(100, 105):
-        system = LTVSystem(dt=dt, episode_length=episode_length, disturbance_strength=disturbance_strength)
+        system = LTVSystem(dt=dt, episode_length=episode_length, disturbance_strength=disturbance_strength,
+                           rng_seed=seed)
         results = run_offline_mpc(system, initial_state, episode_length)
+        print(f"Total cost: {sum(results.step_costs)}")
         plot_results(results)
         pickle.dump(results, open(f"./data/offline/ltv/seed-{seed}", "wb"))
 
@@ -105,10 +107,10 @@ def run_full_grid_online_mpc_ltv():
                 start = timeit.default_timer()
                 run_online_ltv(noise_type, prediction_noise, prediction_horizon, SEEDS, offline_run)
                 stop = timeit.default_timer()
-                print(f"Time taken: {stop-start:.2f} secs")
+                print(f"Time taken: {stop-start:.2f} secs.")
 
 
 # Example usage
 if __name__ == "__main__":
     collect_ltv_trajectories()
-    run_full_grid_online_mpc_ltv()
+    # run_full_grid_online_mpc_ltv()
