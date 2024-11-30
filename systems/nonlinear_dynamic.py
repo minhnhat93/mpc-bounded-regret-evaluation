@@ -2,11 +2,10 @@ import numpy as np
 import cvxpy as cp
 
 from dataclasses import dataclass
-import copy
 
 
 @dataclass
-class LTVParameter:
+class LorenzSystemPrameter:
     Q: np.ndarray
     R: np.ndarray
     x_bar: np.ndarray
@@ -19,7 +18,7 @@ class LTVParameter:
 
 @dataclass
 class OptData:
-    parameters: list[LTVParameter]
+    parameters: list[LorenzSystemPrameter]
     states: list
     inputs: list
     step_costs: list
@@ -68,14 +67,12 @@ class NoisyLTVPrediction(LTVPrediction):
     def Q(self, _Q):
         _Q = np.copy(_Q)
         _Q[[0, 1],[0, 1]] += self.noise_scale * self.rng.uniform(-1, 1, (2,))
-        _Q[[0, 1], [0, 1]] = np.clip(_Q[[0, 1], [0, 1]], a_min=1e-6, a_max=None)
-        return _Q # clip so cost will still be convex, clip to nonzero to avoid degenerate cost function
+        return np.clip(_Q, a_min=0, a_max=None)  # clip so cost will still be convex
 
     def R(self, _R):
         _R = np.copy(_R)
         _R[[0, 1],[0, 1]] += self.noise_scale * self.rng.uniform(-1, 1, (2,))
-        _R[[0, 1], [0, 1]] = np.clip(_R[[0, 1], [0, 1]], a_min=1e-6, a_max=None)
-        return _R  # clip so cost will still be convex, clip to nonzero to avoid degenerate cost function
+        return np.clip(_R, a_min=0, a_max=None)  # clip so cost will still be convex
 
     def x_bar(self, _x_bar):
         _x_bar = np.copy(_x_bar)
@@ -136,7 +133,7 @@ class LTVSystem:
         w = self.w[time_step]
         Q_terminal = np.copy(Q)
         x_bar_terminal = self.x_bar[time_step + 1]
-        return LTVParameter(Q=Q, R=R, x_bar=x_bar, A=A, B=B, w=w, Q_terminal=Q_terminal, x_bar_terminal=x_bar_terminal)
+        return LorenzSystemPrameter(Q=Q, R=R, x_bar=x_bar, A=A, B=B, w=w, Q_terminal=Q_terminal, x_bar_terminal=x_bar_terminal)
 
     def state_dim(self):
         return 2
@@ -191,13 +188,13 @@ class LTVSystem:
         return opt, OptData(parameters=parameters, states=states, inputs=inputs, step_costs=step_costs)
 
 class LTVSystemWithParameterNoise(LTVSystem):
-    def __init__(self, reference_parameters: list[LTVParameter], noisy_prediction_funcs: LTVPrediction, **kwargs):
+    def __init__(self, reference_parameters: list[LorenzSystemPrameter], noisy_prediction_funcs: LTVPrediction, **kwargs):
         super().__init__(**kwargs)
         self.noisy_prediction_funcs = noisy_prediction_funcs
         self.reference_parameters = reference_parameters
 
     def get_program_parameters(self, time_step):
-        parameters = copy.deepcopy(self.reference_parameters[time_step])
+        parameters = self.reference_parameters[time_step]
         parameters.Q = self.noisy_prediction_funcs.Q(parameters.Q)
         parameters.R = self.noisy_prediction_funcs.R(parameters.R)
         parameters.x_bar = self.noisy_prediction_funcs.x_bar(parameters.x_bar)

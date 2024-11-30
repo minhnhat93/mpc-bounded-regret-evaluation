@@ -60,9 +60,15 @@ def run_online_ltv(noise_type: str, prediction_noise: float, prediction_horizon:
 
 
 if __name__ == "__main__":
-    NOISE_TYPES = ["disturbance", "full"]
-    PREDICTION_NOISES = [0.0, 0.01, 0.1, 0.2, 0.5, 1.0]
+    # NOISE_TYPES = ["disturbance", "full"]
+    # PREDICTION_NOISES = [0.0, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0]
+    # PREDICTION_HORIZON = list(range(10, 101, 10))
+    NOISE_TYPES = ["full"]
+    PREDICTION_NOISES = [0.5, 1.0]
     PREDICTION_HORIZON = list(range(10, 101, 10))
+    # NOISE_TYPES = ["disturbance", "full"]
+    # PREDICTION_NOISES = [0.02, 0.05]
+    # PREDICTION_HORIZON = list(range(10, 101, 10))
     SEEDS = list(np.arange(200, 205))
     offline_run = "data/offline/ltv/seed-100"
     print(f"Running full grid for LTV system. Reference offline run file is {offline_run}")
@@ -70,8 +76,8 @@ if __name__ == "__main__":
     for noise_type in NOISE_TYPES:
         for prediction_noise in PREDICTION_NOISES:
             for prediction_horizon in PREDICTION_HORIZON:
-                print(f"Running: noise_type={noise_type}, prediction_noise={prediction_noise}, prediction_horizon={prediction_horizon}")
+                print(f"Running: noise_type={noise_type}, prediction_noise={prediction_noise}, prediction_horizon={prediction_horizon}", end=". ")
                 start = timeit.default_timer()
                 run_online_ltv(noise_type, prediction_noise, prediction_horizon, SEEDS, offline_run)
                 stop = timeit.default_timer()
-                print(f"Time taken: {stop-start:.2f}")
+                print(f"Time taken: {stop-start:.2f} secs")
