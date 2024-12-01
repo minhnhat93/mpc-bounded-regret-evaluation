@@ -81,6 +81,7 @@ def run_online_ltv(noise_type: str, prediction_noise: float, prediction_horizon:
             dt=dt, episode_length=episode_length, disturbance_strength=disturbance_strength,
         )
         results = run_online_mpc(system, initial_state, episode_length, prediction_horizon)
+        print(f"Finished. Total realized cost: {sum(results.step_costs)}")
         # plot_results(results)
         pickle.dump(results, open(f"./data/online/ltv/{noise_type},noise-{prediction_noise},horizon-{prediction_horizon},seed-{seed}", "wb"))
 

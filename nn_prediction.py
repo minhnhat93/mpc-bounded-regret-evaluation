@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 import torch
 import pickle
 from torch import nn
@@ -32,18 +34,18 @@ class LTVSystemWithNeuralNetPrediction(LTVSystem):
 
     def get_program_parameters(self, time_step):
         # Q, R, x_bar, A, B, w, Q_terminal, x_bar_terminal
-        out = self.prediction_nn(time_step)
+        out = self.prediction_nn(torch.tensor([time_step], dtype=torch.float32)).cpu().detach()
         Q = np.eye(2)
-        Q[[0, 1],[0, 1]] = np.clip(out[:2].cpu().detach(), a_min=1e-6, a_max=None)
+        Q[[0, 1],[0, 1]] = np.clip(out[0:2], a_min=1e-6, a_max=None)
         R = np.eye(2)
-        R[[0, 1], [0, 1]] = np.clip(out[2:4].cpu().detach(), a_min=1e-6, a_max=None)
-        x_bar = out[4:6].cpu().detach()
-        A = out[6:10].cpu().detach().reshape(2,2)
-        B = out[10:14].cpu().detach().reshape(2,2)
-        w = out[14:16].cpu().detach()
+        R[[0, 1], [0, 1]] = np.clip(out[2:4], a_min=1e-6, a_max=None)
+        x_bar = out[4:6]
+        A = out[6:10].reshape(2,2)
+        B = out[10:14].reshape(2,2)
+        w = out[14:16]
         Q_terminal = np.eye(2)
-        Q_terminal[[0, 1], [0, 1]] = out[16:18].cpu().detach()
-        x_bar_terminal = out[18:20].cpu().detach()
+        Q_terminal[[0, 1], [0, 1]] = np.clip(out[16:18], a_min=1e-6, a_max=None)
+        x_bar_terminal = out[18:20]
         return LTVParameter(Q, R, x_bar, A, B, w, Q_terminal, x_bar_terminal)
 
 
@@ -73,7 +75,7 @@ class NNPredTrainer:
         self.pnn = PredictionNetwork()
         self.loss_fn = nn.MSELoss()
         self.optimizer = optim.Adam(self.pnn.parameters(), lr=1e-4)
-        self.losses = []
+        self.eval_data = []
 
     def train(self, num_iterations, verbose=1000):
         for j in range(num_iterations):
@@ -83,9 +85,14 @@ class NNPredTrainer:
             loss.backward()
             self.optimizer.step()
             l = loss.cpu().detach().item()
-            if verbose and len(self.losses) % verbose == 0:
-                print(f"Iteration: {len(self.losses)}: loss={l}")
-            self.losses.append(l)
+            self.eval_data.append(self.evaluation(p.detach().cpu(), self.out_tensor.detach().cpu()))
+            if verbose is not None and (verbose == 0 or (len(self.eval_data)-1) % verbose == 0):
+                print(f"Iteration: {len(self.eval_data)-1}: loss={self.eval_data[-1]}")
+
+    def evaluation(self, prediction, target):
+        mse = ((prediction - target) ** 2).mean()
+        mae = np.abs(prediction - target).mean()
+        return OrderedDict(MSE=mse, MAE=mae)
 
 
 if __name__ == '__main__':
