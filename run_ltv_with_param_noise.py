@@ -27,7 +27,7 @@ def collect_ltv_trajectories():
         system = LTVSystem(dt=dt, episode_length=episode_length, disturbance_strength=disturbance_strength,
                            rng_seed=seed)
         results = run_offline_mpc(system, initial_state, episode_length)
-        print(f"Total cost: {sum(results.step_costs)}")
+        print(f"Total true cost: {sum(results.step_costs)}")
         plot_results(results)
         pickle.dump(results, open(f"./data/offline/ltv/seed-{seed}", "wb"))
 
@@ -81,7 +81,7 @@ def run_online_ltv(noise_type: str, prediction_noise: float, prediction_horizon:
             dt=dt, episode_length=episode_length, disturbance_strength=disturbance_strength,
         )
         results = run_online_mpc(system, initial_state, episode_length, prediction_horizon)
-        print(f"Finished. Total realized cost: {sum(results.step_costs)}")
+        print(f"Finished. Total nominal (NOT TRUE) cost: {sum(results.step_costs)}")
         # plot_results(results)
         pickle.dump(results, open(f"./data/online/ltv/{noise_type},noise-{prediction_noise},horizon-{prediction_horizon},seed-{seed}", "wb"))
 

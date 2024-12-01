@@ -61,7 +61,7 @@ def train_nn_predictor_and_evaluate_online_mpc(data_fn, model_directory,
         rng_seed=system_seed
     )
 
-    trainer = NNPredTrainer(data_fn, dt)
+    trainer = NNPredTrainer(prediction_nn, data_fn, dt)
     last_iteration = 0
     mpc_results = []
     for j in evaluation_iterations:
@@ -71,7 +71,7 @@ def train_nn_predictor_and_evaluate_online_mpc(data_fn, model_directory,
 
         print(f"Running online MPC using the current prediction model.")
         results = run_online_mpc(system, initial_state, episode_length, prediction_horizon)
-        print(f"Finished. Total realized cost: {sum(results.step_costs)}")
+        print(f"Finished. Total nominal (NOT TRUE) cost: {sum(results.step_costs)}")
 
         torch_file_path = os.path.join(model_directory, f"{j}.pt")
         torch.save(prediction_nn.state_dict(), torch_file_path)
@@ -95,6 +95,7 @@ if __name__ == "__main__":
     print(f"Running Neural Network predictions. Reference offline run file is {offline_run}")
     print(f"Prediction horizons: {PREDICTION_HORIZON}. Evaluation iterations: {EVALUATION_ITERATIONS}.")
     for prediction_horizon in PREDICTION_HORIZON:
+        print("==================================================")
         print(f"Running: prediction_horizon={prediction_horizon}.")
         start = timeit.default_timer()
         results = train_nn_predictor_and_evaluate_online_mpc(

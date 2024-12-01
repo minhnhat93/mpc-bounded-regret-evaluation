@@ -34,7 +34,8 @@ class LTVSystemWithNeuralNetPrediction(LTVSystem):
 
     def get_program_parameters(self, time_step):
         # Q, R, x_bar, A, B, w, Q_terminal, x_bar_terminal
-        out = self.prediction_nn(torch.tensor([time_step], dtype=torch.float32)).cpu().detach()
+        with torch.no_grad():
+            out = self.prediction_nn(torch.tensor([time_step], dtype=torch.float32)).cpu().detach()
         Q = np.eye(2)
         Q[[0, 1],[0, 1]] = np.clip(out[0:2], a_min=1e-6, a_max=None)
         R = np.eye(2)
@@ -70,9 +71,9 @@ def read_reference_into_pytorch(fn, dt):
 
 
 class NNPredTrainer:
-    def __init__(self, fn, dt):
+    def __init__(self, prediction_network, fn, dt):
         self.in_tensor, self.out_tensor = read_reference_into_pytorch(fn, dt)
-        self.pnn = PredictionNetwork()
+        self.pnn = prediction_network
         self.loss_fn = nn.MSELoss()
         self.optimizer = optim.Adam(self.pnn.parameters(), lr=1e-4)
         self.eval_data = []
