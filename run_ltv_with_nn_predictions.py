@@ -113,4 +113,4 @@ def run_full_grid_online_mpc_ltv():
 # Example usage
 if __name__ == "__main__":
     collect_ltv_trajectories()
-    # run_full_grid_online_mpc_ltv()
+    run_full_grid_online_mpc_ltv()
