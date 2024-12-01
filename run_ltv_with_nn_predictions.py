@@ -78,6 +78,7 @@ def train_nn_predictor_and_evaluate_online_mpc(data_fn, model_directory,
         print(f"Model saved at {torch_file_path}")
 
         mpc_results.append(results)
+        last_iteration = j
 
     return dict(
         evaluation_iterations=evaluation_iterations, mpc_results=mpc_results, nn_eval_data=trainer.eval_data,
