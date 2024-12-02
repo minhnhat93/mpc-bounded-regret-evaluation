@@ -9,21 +9,23 @@ import numpy as np
 
 
 class PredictionNetwork(nn.Module):
-    def __init__(self, hidden=64):
+    def __init__(self, hidden, input_min, input_max):
         super().__init__()
         self.model = nn.Sequential(
             nn.Linear(1, hidden), nn.ReLU(),
             nn.Linear(hidden, hidden), nn.ReLU(),
             nn.Linear(hidden, 20)
         )
+        self.input_min, self.input_max = input_min, input_max
         # Q, R, x_bar, A, B, w, Q_terminal, x_bar_terminal
         # dimension: 2, 2, 2, 4, 4, 2, 2, 2
 
     def forward(self, x):
+        # normalize input
+        # for now, hard code because I know the input range
+        x = (x - self.input_min) / (self.input_max - self.input_min)
+        x = (x - 0.5) * 2
         out = self.model(x)
-        # Q, R, x_bar, A, B, w, Q_terminal, x_bar_terminal
-        # 2, 2, 2, 4, 4, 2, 2, 2
-        # out[:,0:4] = torch.clamp(out[:, 0:4].clone(), min=1e-6)
         return out
 
 
@@ -58,7 +60,7 @@ class LTVSystemWithNeuralNetPrediction(LTVSystem):
         return x_next
 
 
-def read_reference_into_pytorch(fn, dt):
+def read_reference_into_pytorch(fn):
     results = pickle.load(open(fn, "rb"))
     parameters = results.opt_datas.parameters
     out = []
@@ -73,19 +75,19 @@ def read_reference_into_pytorch(fn, dt):
         o[16:18] = p.Q_terminal[[0, 1], [0, 1]]
         o[18:20] = p.x_bar_terminal
         out.append(o)
-    in_tensor = torch.arange(len(parameters))[:, None] * dt
+    in_tensor = torch.arange(len(parameters))[:, None]
     out_tensor = torch.from_numpy(np.stack(out))
     return in_tensor, out_tensor
 
 
 class NNPredTrainer:
-    def __init__(self, prediction_network, fn, dt):
+    def __init__(self, prediction_network, data, dt):
         self.pnn = prediction_network
         device = self.pnn.model[0].weight.device
-        self.in_tensor, self.out_tensor = read_reference_into_pytorch(fn, dt)
+        self.in_tensor, self.out_tensor = data
         self.in_tensor, self.out_tensor = self.in_tensor.to(device), self.out_tensor.to(device)
         self.loss_fn = nn.MSELoss()
-        self.optimizer = optim.Adam(self.pnn.parameters(), lr=1e-3)
+        self.optimizer = optim.Adam(self.pnn.parameters(), lr=1e-4)
         self.eval_data = []
 
     def train(self, num_iterations, verbose=True):
@@ -106,5 +108,6 @@ class NNPredTrainer:
 
 
 if __name__ == '__main__':
+    # TODO: old code has error, don't run
     trainer = NNPredTrainer("data/offline/ltv/seed-100", 0.1)
     trainer.train(10000)

@@ -2,7 +2,7 @@ import numpy.random
 import torch.random
 
 from utilities import plot_results
-from nn_prediction import LTVSystemWithNeuralNetPrediction, NNPredTrainer, PredictionNetwork
+from nn_prediction import LTVSystemWithNeuralNetPrediction, NNPredTrainer, PredictionNetwork, read_reference_into_pytorch
 import numpy as np
 from mpc import MPCResult, run_online_mpc
 import pickle
@@ -25,7 +25,9 @@ def train_nn_predictor_and_evaluate_online_mpc(data_fn, model_directory,
     dt = 0.1
 
     device = torch.device("cuda:0")
-    prediction_nn = PredictionNetwork(256).to(device)
+    in_tensor, out_tensor = read_reference_into_pytorch(data_fn)
+    input_min, input_max = in_tensor.min().cpu().detach().item(), in_tensor.max().cpu().detach().item()
+    prediction_nn = PredictionNetwork(256, input_min, input_max).to(device)
     system_seed = np.random.randint(low=1)
     offline_run = pickle.load(open(data_fn, "rb"))
     reference_parameters = offline_run.opt_datas.parameters
@@ -33,14 +35,14 @@ def train_nn_predictor_and_evaluate_online_mpc(data_fn, model_directory,
         prediction_nn, reference_parameters,
         dt=dt, episode_length=episode_length, disturbance_strength=disturbance_strength, rng_seed=system_seed
     )
+    trainer = NNPredTrainer(prediction_nn, (in_tensor, out_tensor), dt)
 
-    trainer = NNPredTrainer(prediction_nn, data_fn, dt)
     last_iteration = 0
     mpc_results = []
     for j in evaluation_iterations:
         num_train_iteration = j - last_iteration
         print("-")
-        print(f"Current model has been trained for {last_iteration} steps. Training model for {num_train_iteration} steps.")
+        print(f"Current model has been trained for {last_iteration} steps. Training model for {num_train_iteration} more steps.")
         trainer.train(j - last_iteration, verbose=True)
 
         print(f"Running online MPC using the current prediction model.")
@@ -65,7 +67,7 @@ if __name__ == "__main__":
     data_file = "data/offline/ltv/seed-100"
     offline_run = "data/offline/ltv/seed-100"
     PREDICTION_HORIZON = list(range(10, 101, 10))
-    EVALUATION_ITERATIONS = [#0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000,
+    EVALUATION_ITERATIONS = [0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000,
                              5000, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000, 100000]
     offline_run = "data/offline/ltv/seed-100"
     print(f"Running Neural Network predictions. Reference offline run file is {offline_run}")
