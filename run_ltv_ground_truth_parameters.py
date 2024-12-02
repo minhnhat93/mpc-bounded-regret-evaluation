@@ -26,7 +26,7 @@ def collect_ltv_trajectories():
                            rng_seed=seed)
         results = run_offline_mpc(system, initial_state, episode_length)
         print(f"Seed={seed}. Total true cost: {sum(results.step_costs)}")
-        plot_results(results)
+        # plot_results(results)
         pickle.dump(results, open(f"./data/offline/ltv/seed-{seed}", "wb"))
 
 

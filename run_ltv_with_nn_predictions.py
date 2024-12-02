@@ -68,7 +68,7 @@ if __name__ == "__main__":
     offline_run = "data/offline/ltv/seed-100"
     PREDICTION_HORIZON = list(range(10, 101, 10))
     EVALUATION_ITERATIONS = [0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000,
-                             5000, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000, 100000]
+                             5000, 10000, 20000, 30000, 40000, 50000]
     offline_run = "data/offline/ltv/seed-100"
     print(f"Running Neural Network predictions. Reference offline run file is {offline_run}")
     print(f"Prediction horizons: {PREDICTION_HORIZON}. Evaluation iterations: {EVALUATION_ITERATIONS}.")
