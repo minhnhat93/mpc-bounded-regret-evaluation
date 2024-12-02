@@ -30,13 +30,14 @@ class PredictionNetwork(nn.Module):
 class LTVSystemWithNeuralNetPrediction(LTVSystem):
     def __init__(self, prediction_nn, reference_parameters, **kwargs):
         super().__init__(**kwargs)
-        self.prediction_nn = prediction_nn
+        self.pnn = prediction_nn
         self.reference_parameters = reference_parameters
 
     def get_program_parameters(self, time_step):
         # Q, R, x_bar, A, B, w, Q_terminal, x_bar_terminal
         with torch.no_grad():
-            out = self.prediction_nn(torch.tensor([time_step], dtype=torch.float32)).cpu().detach()
+            device = self.pnn.model[0].weight.device
+            out = self.pnn(torch.tensor([time_step], dtype=torch.float32).to(device)).cpu().detach()
         Q = np.eye(2)
         Q[[0, 1],[0, 1]] = np.clip(out[0:2], a_min=1e-6, a_max=None)
         R = np.eye(2)
@@ -79,10 +80,12 @@ def read_reference_into_pytorch(fn, dt):
 
 class NNPredTrainer:
     def __init__(self, prediction_network, fn, dt):
-        self.in_tensor, self.out_tensor = read_reference_into_pytorch(fn, dt)
         self.pnn = prediction_network
+        device = self.pnn.model[0].weight.device
+        self.in_tensor, self.out_tensor = read_reference_into_pytorch(fn, dt)
+        self.in_tensor, self.out_tensor = self.in_tensor.to(device), self.out_tensor.to(device)
         self.loss_fn = nn.MSELoss()
-        self.optimizer = optim.Adam(self.pnn.parameters(), lr=1e-4)
+        self.optimizer = optim.Adam(self.pnn.parameters(), lr=1e-3)
         self.eval_data = []
 
     def train(self, num_iterations, verbose=True):

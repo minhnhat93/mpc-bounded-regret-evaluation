@@ -24,7 +24,8 @@ def train_nn_predictor_and_evaluate_online_mpc(data_fn, model_directory,
     disturbance_strength = 0.2
     dt = 0.1
 
-    prediction_nn = PredictionNetwork()
+    device = torch.device("cuda:0")
+    prediction_nn = PredictionNetwork(256).to(device)
     system_seed = np.random.randint(low=1)
     offline_run = pickle.load(open(data_fn, "rb"))
     reference_parameters = offline_run.opt_datas.parameters
