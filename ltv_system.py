@@ -152,6 +152,11 @@ class LTVSystem:
         x_next = x + dxdt * dt
         return x_next
 
+    def true_dynamic(self, x, u, parameters, time_step, dt):
+        # return the true dynamic from the ground truth parameter
+        # for this class, because this is for the ground truth, simply return the other dynamic function
+        return self.dynamic(x, u, parameters, dt)
+
     def get_mpc_optimization(self, x_start, start_step, num_steps):
         states = cp.Variable((num_steps + 1, self.state_dim()))
         inputs = cp.Variable((num_steps, self.input_dim()))
@@ -211,3 +216,9 @@ class LTVSystemWithParameterNoise(LTVSystem):
         parameters.x_bar_terminal = self.noisy_prediction_funcs.x_bar_terminal(parameters.x_bar_terminal)
 
         return parameters
+
+    def true_dynamic(self, x, u, parameters, time_step, dt):
+        parameters = copy.deepcopy(self.reference_parameters[time_step])
+        dxdt = parameters.A @ x + parameters.B @ u + parameters.w
+        x_next = x + dxdt * dt
+        return x_next

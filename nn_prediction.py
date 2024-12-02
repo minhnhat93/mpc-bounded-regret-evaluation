@@ -1,5 +1,5 @@
 from collections import OrderedDict
-
+import copy
 import torch
 import pickle
 from torch import nn
@@ -28,9 +28,10 @@ class PredictionNetwork(nn.Module):
 
 
 class LTVSystemWithNeuralNetPrediction(LTVSystem):
-    def __init__(self, prediction_nn, **kwargs):
+    def __init__(self, prediction_nn, reference_parameters, **kwargs):
         super().__init__(**kwargs)
         self.prediction_nn = prediction_nn
+        self.reference_parameters = reference_parameters
 
     def get_program_parameters(self, time_step):
         # Q, R, x_bar, A, B, w, Q_terminal, x_bar_terminal
@@ -48,6 +49,12 @@ class LTVSystemWithNeuralNetPrediction(LTVSystem):
         Q_terminal[[0, 1], [0, 1]] = np.clip(out[16:18], a_min=1e-6, a_max=None)
         x_bar_terminal = out[18:20]
         return LTVParameter(Q, R, x_bar, A, B, w, Q_terminal, x_bar_terminal)
+
+    def true_dynamic(self, x, u, parameters, time_step, dt):
+        parameters = copy.deepcopy(self.reference_parameters[time_step])
+        dxdt = parameters.A @ x + parameters.B @ u + parameters.w
+        x_next = x + dxdt * dt
+        return x_next
 
 
 def read_reference_into_pytorch(fn, dt):
@@ -78,17 +85,16 @@ class NNPredTrainer:
         self.optimizer = optim.Adam(self.pnn.parameters(), lr=1e-4)
         self.eval_data = []
 
-    def train(self, num_iterations, verbose=1000):
+    def train(self, num_iterations, verbose=True):
         for j in range(num_iterations):
             self.optimizer.zero_grad()
             p = self.pnn(self.in_tensor)
             loss = self.loss_fn(p, self.out_tensor)
             loss.backward()
             self.optimizer.step()
-            l = loss.cpu().detach().item()
             self.eval_data.append(self.evaluation(p.detach().cpu(), self.out_tensor.detach().cpu()))
-            if verbose is not None and (verbose == 0 or (len(self.eval_data)-1) % verbose == 0):
-                print(f"Iteration: {len(self.eval_data)-1}: loss={self.eval_data[-1]}")
+        if verbose and len(self.eval_data) > 0:
+            print(f"Trained for {len(self.eval_data)-1} steps: loss={self.eval_data[-1]}")
 
     def evaluation(self, prediction, target):
         mse = ((prediction - target) ** 2).mean()
