@@ -54,17 +54,17 @@ def create_dynamic_regret_heatmap_noisy_prediction():
     row_idxs = [e for e in PREDICTION_NOISES]
     col_idxs = [e for e in PREDICTION_HORIZON]
 
-    os.makedirs("/figures/noisy_parameters", exist_ok=True)
+    os.makedirs("./figures/noisy_parameters", exist_ok=True)
     plot_matrix_heatmap(regret_mean[0], row_idxs, col_idxs, "Noise Strength", "Prediction Horizon", format="4.4f", log_plot=True,
-                        title="Noisy Prediction on Disturbance Only: Mean Cost", save_fn="./figures/noisy_parameters/regret_mean_disturbance_only.png")
+                        title="Noises on Disturbance only: Mean Dynamic Regret", save_fn="./figures/noisy_parameters/regret_mean_disturbance_only.png")
     plot_matrix_heatmap(regret_mean[1], row_idxs, col_idxs, "Noise Strength", "Prediction Horizon",
                         format="4.4g", log_plot=True,
-                        title="Noisy Prediction on All Parameters: Mean Cost", save_fn="./figures/noisy_parameters/regret_mean_full.png")
+                        title="Noises on All Parameters: Mean Dynamic Regret", save_fn="./figures/noisy_parameters/regret_mean_full.png")
     plot_matrix_heatmap(regret_std[0], row_idxs, col_idxs, "Noise Strength", "Prediction Horizon", format="4.4f",
-                        title="Noisy Prediction on Disturbance Only: Standard Deviation",
+                        title="Noises on Disturbance only: Standard Deviation of Dynamic Regret",
                         save_fn="./figures/noisy_parameters/regret_std_disturbance_only.png")
     plot_matrix_heatmap(regret_std[1], row_idxs, col_idxs, "Noise Strength", "Prediction Horizon", format="4.4g",
-                        title="Noisy Prediction on All Parameters: Standard Deviation",
+                        title="Noises on All Parameters: Standard Deviation of Dynamic Regret",
                         save_fn="./figures/noisy_parameters/regret_std_full.png")
     print("Finished")
 
@@ -78,7 +78,7 @@ def plot_nn_eval_data():
 
     sn.set_style('whitegrid')
     fig = plt.figure(figsize=(12,4))
-    fig.suptitle("Mean Absolute Error: Neural Network Training", fontsize=15)
+    fig.suptitle("Error during Neural Network training", fontsize=15)
     s = sn.lineplot(mae_plot)
     ax = plt.gca()
     labels = [str(e) for e in EVALUATION_ITERATIONS[1:]]
@@ -111,7 +111,7 @@ def create_dynamic_regret_heatmap_nn_prediction():
     col_idxs = [e for e in PREDICTION_HORIZON]
     os.makedirs("./figures/neural_networks", exist_ok=True)
     plot_matrix_heatmap(regret_matrix[::-1], row_idxs, col_idxs, "Number of training steps", "Prediction Horizon",
-                        title="Dynamic Regret with Neural Network Prediction Model on different training steps",
+                        title="Dynamic Regret for Neural Network Prediction Model vs Training Steps",
                         format="4.4g", save_fn="./figures/neural_networks/regret.png")
     print("Finished")
 

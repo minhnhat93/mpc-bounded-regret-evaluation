@@ -9,13 +9,8 @@ import os
 
 
 def run_online_ltv(noise_type: str, prediction_noise: float, prediction_horizon: int,
-                   random_seeds: list, reference_offline_run_file: str):
-    # THESE ARE ADDITIONAL PARAMETERS (hard coded for now)
-    initial_state = np.array([0.0, 0.0])
-    episode_length = 100
-    disturbance_strength = 0.2
-    dt = 0.1
-
+                   random_seeds: list, reference_offline_run_file: str, episode_length: int = 100,
+                   initial_state = np.array([0.0, 0.0]), disturbance_strength = 0.2, dt = 0.1):
     # this is the chosen offline run reference parameters to perform experiments
     offline_run = pickle.load(open(reference_offline_run_file, "rb"))
     reference_parameters = offline_run.opt_datas.parameters

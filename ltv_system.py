@@ -123,6 +123,8 @@ class LTVSystem:
 
         self.Q = np.array([[[1 + np.exp(-t), 0],[0, 1 + 0.05 * t]] for t in self.t])
         self.R = np.array([[[1, 0], [0, 0.1 + np.exp(-t)]] for t in self.t])
+        # VV TODO: ILL-CONDITIONED CASE - Comment the above line and enable this line below VV
+        # self.R = np.array([[[1, 0], [0, np.exp(-t)]] for t in self.t])
         self.x_bar = np.array([self.reference_traj_func(t) for t in self.t])
         self.A = np.array([[[np.cos(t), np.sin(t)],[-np.sin(t), np.cos(t)]] for t in self.t])
         self.B = np.array([[[1, 0], [0, np.exp(-t)]] for t in self.t])
