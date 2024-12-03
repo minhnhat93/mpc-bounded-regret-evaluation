@@ -117,7 +117,7 @@ def create_dynamic_regret_heatmap_nn_prediction():
 
 def create_dynamic_regret_curves():
     EPISODE_LENGTHS = np.arange(20, 201, 20)
-    PREDICTION_NOISES = [0.0, 0.01, 0.1, 1.0]
+    PREDICTION_NOISES = [0.0, 0.1, 0.5, 1.0]
     PREDICTION_HORIZON_RATIOS = [0.1, 0.5, 1.0]
     def _plot(regret, title, save_fn):
         num_pn, num_phr = regret.shape[0], regret.shape[1]
@@ -125,8 +125,10 @@ def create_dynamic_regret_curves():
         fig.suptitle(title, fontsize=15)
         for row in range(num_pn):
             for col in range(num_phr):
+                episode_lengths = EPISODE_LENGTHS[:len(regret[row, col])]
                 ax = axs[row, col]
-                ax.plot(regret[row, col])
+                ax.plot(episode_lengths, regret[row, col], color='blue')
+                ax.plot(episode_lengths, episode_lengths, color='red')
                 ax.set_xlabel(f"Prediction horizon: {PREDICTION_HORIZON_RATIOS[col]} * T", fontsize=15)
                 ax.set_ylabel(f"Noise: {PREDICTION_NOISES[row]}", fontsize=15)
 
@@ -139,8 +141,7 @@ def create_dynamic_regret_curves():
 
     # Note: in this function all the cost have been corrected during run time, so no need to correct anymore.
     os.makedirs("./figures/noisy_parameters", exist_ok=True)
-    #regret_matrix = pickle.load(open("data/test_dynamic_regret_curve/final_result", "rb"))
-    regret_matrix = np.random.normal(np.zeros((2, 4, 3, len(EPISODE_LENGTHS))))
+    regret_matrix = pickle.load(open("data/test_dynamic_regret_curve/final_result", "rb"))
     _plot(regret_matrix[0],
           "Dynamic Regret Curve for multiple Prediction Horizon Ratios and Noise Levels: Noise on Disturbance only",
           save_fn="./figures/noisy_parameters/dynamic_regret_curve_table_disturbance.png")
