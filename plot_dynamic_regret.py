@@ -121,7 +121,7 @@ def create_dynamic_regret_curves():
     PREDICTION_HORIZON_RATIOS = [0.1, 0.5, 1.0]
     def _plot(regret, title, save_fn):
         num_pn, num_phr = regret.shape[0], regret.shape[1]
-        fig, axs = plt.subplots(num_pn, num_phr, figsize=(4 * num_pn, 4 * num_phr))
+        fig, axs = plt.subplots(num_pn, num_phr, figsize=(2 * num_pn, 4 * num_phr))
         fig.suptitle(title, fontsize=15)
         for row in range(num_pn):
             for col in range(num_phr):
@@ -152,6 +152,6 @@ def create_dynamic_regret_curves():
 
 if __name__ == '__main__':
     create_dynamic_regret_curves()
-    # create_dynamic_regret_heatmap_noisy_prediction()
-    # create_dynamic_regret_heatmap_nn_prediction()
-    # plot_nn_eval_data()
+    create_dynamic_regret_heatmap_noisy_prediction()
+    create_dynamic_regret_heatmap_nn_prediction()
+    plot_nn_eval_data()
