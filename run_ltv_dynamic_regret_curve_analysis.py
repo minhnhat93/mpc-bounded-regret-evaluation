@@ -15,7 +15,7 @@ def run_noisy_parameters_multiple_episode_length():
     os.makedirs(out_dir, exist_ok=True)
     NOISE_TYPES = ["disturbance", "full"]
     EPISODE_LENGTHS = np.arange(20, 201, 20)
-    PREDICTION_NOISES = [0.0, 0.1, 0.5, 1.0]
+    PREDICTION_NOISES = [0.0, 0.01, 0.02, 0.05, 0.1, 0.5, 1.0]
     PREDICTION_HORIZON_RATIOS = [0.1, 0.5, 1.0]
     noise_seed = 200
     system_seed = 100
