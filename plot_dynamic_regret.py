@@ -49,7 +49,7 @@ def create_dynamic_regret_heatmap_noisy_prediction():
     regret_matrix = cost_matrix - ref_cost
     regret_mean = np.mean(regret_matrix, axis=-1)
     regret_std = np.std(regret_matrix, axis=-1)
-    regret_std[:, 0] = 1e-8
+    regret_std[:, 0] = 1e-8  # here the standard deviation is 0 because there is no prediction error, however, set to 1e-8 to avoid plotting error in log scale
 
     row_idxs = [e for e in PREDICTION_NOISES]
     col_idxs = [e for e in PREDICTION_HORIZON]
