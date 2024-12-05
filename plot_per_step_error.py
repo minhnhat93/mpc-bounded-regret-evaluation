@@ -31,30 +31,29 @@ def create_error_graphs():
     per_step_error = np.abs(u_diff)
     per_step_error = np.mean(per_step_error, axis=-1)  # average over the 2 input dimension
     per_step_error = np.mean(per_step_error, axis=-2)  # average over the random seed
+    per_step_error_episode_average = np.mean(per_step_error, axis=-1)  #average over the entire episode as well because plotting all is too cluttered
 
     def _plot(per_step_error, title, save_fn):
         num_pn, num_phr = per_step_error.shape[0], per_step_error.shape[1]
-        fig, axs = plt.subplots(num_pn, num_phr, figsize=(2 * num_pn, 4))
+        fig, axs = plt.subplots(4, 2, figsize=(8, 8))
         fig.suptitle(title, fontsize=15)
-        for row in range(num_pn):
-            for col in range(num_phr):
-                steps = list(range(episode_length))
-                ax = axs[row, col]
-                ax.plot(steps, per_step_error[row, col], color='blue')
-                ax.set_xlabel(f"Prediction horizon: {PREDICTION_HORIZON[col]} * T", fontsize=15)
-                ax.set_ylabel(f"Noise: {PREDICTION_NOISES[row]}", fontsize=15)
+        for j in range(num_pn):
+            ax = axs[j % 4, j // 4]
+            ax.plot(PREDICTION_HORIZON, per_step_error[j], color='blue')
+            ax.set_xlabel(f"Prediction Horizon", fontsize=15)
+            ax.set_ylabel(f"Noise: {PREDICTION_NOISES[j]}", fontsize=15)
 
-        for ax in axs.flat:
-            ax.label_outer()
+        # for ax in axs.flat:
+        #     ax.label_outer()
         plt.tight_layout()
         plt.savefig(save_fn)
 
     os.makedirs("./figures/noisy_parameters", exist_ok=True)
-    _plot(per_step_error[0],
-          "Per-step Error for Multiple Prediction Horizon Ratios and Noise Levels: Noise on Disturbance only",
+    _plot(per_step_error_episode_average[0],
+          "Per-step Error on multiple prediction horizons: Noise on Disturbance only",
           save_fn="./figures/noisy_parameters/per-step_error_disturbance.png")
-    _plot(per_step_error[1],
-          "Per-step Error for multiple Prediction Horizon Ratios and Noise Levels: Noise on All Parameters",
+    _plot(per_step_error_episode_average[1],
+          "Per-step Error on multiple prediction horizons: Noise on All Parameters",
           save_fn="./figures/noisy_parameters/per-step_error_table_all.png")
 
     print("Finished")
