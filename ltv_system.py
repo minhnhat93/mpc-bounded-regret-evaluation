@@ -127,7 +127,9 @@ class LTVSystem:
         # self.R = np.array([[[1, 0], [0, np.exp(-t)]] for t in self.t])
         self.x_bar = np.array([self.reference_traj_func(t) for t in self.t])
         self.A = np.array([[[np.cos(t), np.sin(t)],[-np.sin(t), np.cos(t)]] for t in self.t])
-        self.B = np.array([[[1, 0], [0, np.exp(-t)]] for t in self.t])
+        self.B = np.array([[[1, 0], [0, 0.1 + np.exp(-t)]] for t in self.t])
+        # VV TODO: ILL-CONDITIONED CASE - Comment the above line and enable this line below VV
+        # self.B = np.array([[[1, 0], [0, np.exp(-t)]] for t in self.t])
         self.w = self.rng.normal(loc=0.0, scale=self.disturbance_strength, size=(episode_length, self.state_dim(),))
 
     def get_program_parameters(self, time_step):
