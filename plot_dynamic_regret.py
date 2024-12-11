@@ -128,7 +128,7 @@ def create_dynamic_regret_curves():
                 episode_lengths = EPISODE_LENGTHS[:len(regret[row, col])]
                 ax = axs[row, col]
                 ax.plot(episode_lengths, regret[row, col], color='blue')
-                ax.plot(episode_lengths, episode_lengths, color='red')
+                ax.plot(episode_lengths, episode_lengths, color='red', linestyle='--')
                 ax.set_xlabel(f"Prediction horizon: {PREDICTION_HORIZON_RATIOS[col]} * T", fontsize=15)
                 ax.set_ylabel(f"Noise: {PREDICTION_NOISES[row]}", fontsize=15)
 
