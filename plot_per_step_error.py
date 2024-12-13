@@ -42,6 +42,7 @@ def create_error_graphs():
             ax.plot(PREDICTION_HORIZON, per_step_error[j], color='blue')
             ax.set_xlabel(f"Prediction Horizon", fontsize=15)
             ax.set_ylabel(f"Noise: {PREDICTION_NOISES[j]}", fontsize=15)
+            ax.set_yscale('log')
 
         # for ax in axs.flat:
         #     ax.label_outer()
@@ -51,10 +52,10 @@ def create_error_graphs():
     os.makedirs("./figures/noisy_parameters", exist_ok=True)
     _plot(per_step_error_episode_average[0],
           "Per-step Error on multiple prediction horizons: Noise on Disturbance only",
-          save_fn="./figures/noisy_parameters/per-step_error_disturbance.png")
+          save_fn="./figures/noisy_parameters/per-step_error_disturbance_log.png")
     _plot(per_step_error_episode_average[1],
           "Per-step Error on multiple prediction horizons: Noise on All Parameters",
-          save_fn="./figures/noisy_parameters/per-step_error_table_all.png")
+          save_fn="./figures/noisy_parameters/per-step_error_table_all_log.png")
 
     print("Finished")
 
