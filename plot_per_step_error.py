@@ -54,7 +54,7 @@ def create_error_graphs():
           "Per-step Error on multiple prediction horizons: Noise on Disturbance only",
           save_fn="./figures/noisy_parameters/per-step_error_disturbance_log.png")
     _plot(per_step_error_episode_average[1],
-          "Per-step Error on multiple prediction horizons: Noise on All Parameters",
+          "Per-step Error on multiple prediction horizons: Noise on All Problem Data",
           save_fn="./figures/noisy_parameters/per-step_error_table_all_log.png")
 
     print("Finished")

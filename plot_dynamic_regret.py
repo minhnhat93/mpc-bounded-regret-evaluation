@@ -59,12 +59,12 @@ def create_dynamic_regret_heatmap_noisy_prediction():
                         title="Noises on Disturbance only: Mean Dynamic Regret", save_fn="./figures/noisy_parameters/regret_mean_disturbance_only.png")
     plot_matrix_heatmap(regret_mean[1], row_idxs, col_idxs, "Noise Strength", "Prediction Horizon",
                         format="4.4g", log_plot=True,
-                        title="Noises on All Parameters: Mean Dynamic Regret", save_fn="./figures/noisy_parameters/regret_mean_full.png")
+                        title="Noises on All Problem Data: Mean Dynamic Regret", save_fn="./figures/noisy_parameters/regret_mean_full.png")
     plot_matrix_heatmap(regret_std[0], row_idxs, col_idxs, "Noise Strength", "Prediction Horizon", format="4.4f",
                         title="Noises on Disturbance only: Standard Deviation of Dynamic Regret",
                         save_fn="./figures/noisy_parameters/regret_std_disturbance_only.png")
     plot_matrix_heatmap(regret_std[1], row_idxs, col_idxs, "Noise Strength", "Prediction Horizon", format="4.4g",
-                        title="Noises on All Parameters: Standard Deviation of Dynamic Regret",
+                        title="Noises on All Problem Data: Standard Deviation of Dynamic Regret",
                         save_fn="./figures/noisy_parameters/regret_std_full.png")
     print("Finished")
 
@@ -131,6 +131,7 @@ def create_dynamic_regret_curves():
                 ax.plot(episode_lengths, episode_lengths, color='red', linestyle='--')
                 ax.set_xlabel(f"Prediction horizon: {PREDICTION_HORIZON_RATIOS[col]} * T", fontsize=15)
                 ax.set_ylabel(f"Noise: {PREDICTION_NOISES[row]}", fontsize=15)
+                ax.set_yscale('log')
 
         for ax in axs.flat:
             ax.label_outer()
@@ -144,10 +145,10 @@ def create_dynamic_regret_curves():
     regret_matrix = pickle.load(open("data/test_dynamic_regret_curve/final_result", "rb"))
     _plot(regret_matrix[0],
           "Dynamic Regret Curve for multiple Prediction Horizon Ratios and Noise Levels: Noise on Disturbance only",
-          save_fn="./figures/noisy_parameters/dynamic_regret_curve_table_disturbance.png")
+          save_fn="./figures/noisy_parameters/dynamic_regret_curve_table_disturbance_log.png")
     _plot(regret_matrix[1],
-          "Dynamic Regret Curve for multiple Prediction Horizon Ratios and Noise Levels: Noise on All Parameters",
-          save_fn="./figures/noisy_parameters/dynamic_regret_curve_table_all.png")
+          "Dynamic Regret Curve for multiple Prediction Horizon Ratios and Noise Levels: Noise on All Problem Data",
+          save_fn="./figures/noisy_parameters/dynamic_regret_curve_table_all_log.png")
 
 
 if __name__ == '__main__':
